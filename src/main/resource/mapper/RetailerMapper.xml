@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0 //EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bb.mapper.RetailerMapper">
+    <resultMap id="retailerRM" type="com.bb.entity.Retailer">
+        <id property="retailerId" column="retailerid"/>
+        <result property="name" column="name"/>
+        <result property="telephone" column="telephone"/>
+        <result property="address" column="address"/>
+        <result property="createTime" column="createtime"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    <!--sql片段-->
+    <sql id="query_retailer_where">
+        <if test="name!=null">and name like #{name}</if>
+        <if test="address!=null">and address like #{address}</if>
+        <if test="telephone!=null">and telephone like #{telephone}</if>
+        <if test="status!=null">and status like #{status}</if>
+        <if test="createTime!=null">
+            and createTime like Date_FORMAT(#{createTime},'%y-%m-%d %h:%i:%s')
+        </if>
+        <if test="startTime!=null">
+           <![CDATA[ and createtime >= Date_FORMAT(#{startTime},'%y-%m-%d %h:%i:%s')]]>
+        </if>
+        <if test="endTime!=null">
+            <![CDATA[ and endTime <= Date_FORMAT(#{endTime},'%y-%m-%d %h:%i:%s')]]>
+        </if>
+    </sql>
+    <select id="find" parameterType="java.util.HashMap" resultMap="retailerRM">
+        select from retailer where 1=1
+        <include refid="query_retailer_where"/><!--sql片段引入-->
+        <if test="startPage != null and pageSize !=null">
+            LIMIT #{startPage},#{pageSize}
+        </if>
+    </select>
+    <!--统计数量-->
+    <select id="count" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        select count(*) from retailer where 1=1
+        <include refid="query_retailer_where"/><!--sql片段引入-->
+    </select>
+
+    <insert id="insert" parameterType="com.bb.entity.Retailer">
+        insert into retailer(userid,name,address,telephone,createtime,status) values(#{retailerId},#{name},#{address},#{telephone},#{createTime},1)
+    </insert>
+</mapper>

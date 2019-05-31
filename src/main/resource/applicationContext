@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/mvc
+			http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context.xsd
+			http://www.springframework.org/schema/aop
+			http://www.springframework.org/schema/aop/spring-aop.xsd
+			http://www.springframework.org/schema/tx
+			http://www.springframework.org/schema/tx/spring-tx.xsd ">
+
+    <context:component-scan base-package="com.bb.dao,com.bb.service"/>
+    <!--读取静态属性文件，可以使用${属性名}读取文件中的属性-->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="driverClass" value="${jdbc.driver}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <!--连接池中保留的最大连接数-->
+        <property name="maxPoolSize" value="${c3p0.pool.maxPoolSize}"/>
+        <!--连接池中保留的最小连接数-->
+    <property name="minPoolSize" value="${c3p0.pool.minPoolSize}"/>
+        <!--从连接池获取连接失败后重复尝试的次数-->
+    <property name="acquireIncrement" value="${c3p0.pool.acquireIncrement}"/>
+        <!--初始化时建立的连接数-->
+    <property name="initialPoolSize" value="${c3p0.pool.initialPoolSize}"/>
+ </bean>
+    <!--
+    在之前单独使用mybatis的时候，在数据交互类里，SqlSessionFactory会获取连接数据和映射规则(sqlMapperConfig.xml)
+    从而创建出可以跟数据库交互的SqlSession类
+    在spring里，spring通过单例方式管理SqlSessionFactory，这样不仅节约连接和内存资源，
+    而且不需要自己编写加载Factory的代码，从而统一了会话对象的产生源头
+    -->
+<bean name="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="configLocation" value="classpath:sqlMapConfig.xml"/>
+    <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+</bean>
+    <!--事务管理-->
+    <bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" id="txManager">
+     <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--事务通知-->
+    <tx:advice id="txAdviser" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="insert*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="save*" propagation="REQUIRED"/>
+            <tx:method name="find*" read-only="false"/>
+            <tx:method name="view*" read-only="false"/>
+            <tx:method name="get*" read-only="false"/>
+        </tx:attributes>
+    </tx:advice>
+    <aop:config>
+        <aop:pointcut id="txPointcut" expression="execution(* com.bb.service.*.*(..))"/>
+        <aop:advisor advice-ref="txAdviser" pointcut-ref="txPointcut"/>
+    </aop:config>
+</beans>
